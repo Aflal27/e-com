@@ -3,15 +3,17 @@ import React, { useState } from 'react'
 import { Search, ShoppingCart, User, Moon, Sun, Menu, X } from 'lucide-react'
 import { useCart } from '../context/CartContext'
 import Link from 'next/link'
+import { useTheme } from 'next-themes'
 export default function Header() {
-  const { theme, toggleTheme } = useState(() => {
-    const savedTheme = localStorage.getItem('theme')
-    return (savedTheme as 'light' | 'dark') || 'light'
-  })
+  const { theme, setTheme, resolvedTheme } = useTheme()
   const { cartCount } = useCart()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const toggleTheme = () => {
+    const current = theme === 'system' ? resolvedTheme : theme
+    setTheme(current === 'light' ? 'dark' : 'light')
+  }
   return (
-    <header className='sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
+    <header className='sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60'>
       <div className='container mx-auto px-4'>
         <div className='flex h-16 items-center justify-between'>
           <div className='flex items-center gap-6'>
@@ -51,11 +53,8 @@ export default function Header() {
               onClick={toggleTheme}
               className='p-2 hover:bg-accent rounded-lg'
             >
-              {theme === 'light' ? (
-                <Moon className='h-5 w-5' />
-              ) : (
-                <Sun className='h-5 w-5' />
-              )}
+              <Moon className='h-5 w-5 dark:hidden' />
+              <Sun className='h-5 w-5 hidden dark:inline' />
             </button>
             <Link
               href='/cart'
