@@ -1,12 +1,26 @@
 'use client'
 import React, { useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { fetchBanners, Banner } from '../utils/mockApi'
+
+type BannerDoc = {
+  _id: string
+  image: string
+  alt: string
+}
 export default function Hero() {
-  const [banners, setBanners] = useState<Banner[]>([])
+  const [banners, setBanners] = useState<BannerDoc[]>([])
   const [currentSlide, setCurrentSlide] = useState(0)
   useEffect(() => {
-    fetchBanners().then(setBanners)
+    ;(async () => {
+      try {
+        const res = await fetch('/api/banners', { cache: 'no-store' })
+        if (!res.ok) throw new Error('Failed to load banners')
+        const data: BannerDoc[] = await res.json()
+        setBanners(data)
+      } catch {
+        // noop: leave skeleton if fails
+      }
+    })()
   }, [])
   useEffect(() => {
     if (banners.length === 0) return
@@ -25,11 +39,12 @@ export default function Hero() {
     <section className='relative w-full h-96 md:h-[500px] overflow-hidden'>
       {banners.map((banner, index) => (
         <div
-          key={banner.id}
+          key={banner._id}
           className={`absolute inset-0 transition-opacity duration-500 ${
             index === currentSlide ? 'opacity-100' : 'opacity-0'
           }`}
         >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={banner.image}
             alt={banner.alt}
@@ -39,13 +54,13 @@ export default function Hero() {
       ))}
       <button
         onClick={prevSlide}
-        className='absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white shadow-lg'
+        className='absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-card/80 hover:bg-card shadow-lg'
       >
         <ChevronLeft className='h-6 w-6' />
       </button>
       <button
         onClick={nextSlide}
-        className='absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white shadow-lg'
+        className='absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-card/80 hover:bg-card shadow-lg'
       >
         <ChevronRight className='h-6 w-6' />
       </button>
@@ -55,7 +70,7 @@ export default function Hero() {
             key={index}
             onClick={() => setCurrentSlide(index)}
             className={`h-2 rounded-full transition-all ${
-              index === currentSlide ? 'w-8 bg-white' : 'w-2 bg-white/50'
+              index === currentSlide ? 'w-8 bg-primary' : 'w-2 bg-primary/50'
             }`}
           />
         ))}

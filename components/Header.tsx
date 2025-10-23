@@ -18,7 +18,7 @@ export default function Header() {
         <div className='flex h-16 items-center justify-between'>
           <div className='flex items-center gap-6'>
             <Link href='/' className='text-2xl font-bold'>
-              ShopHub
+              Shop
             </Link>
             <nav className='hidden md:flex items-center gap-6'>
               <Link href='/' className='text-sm font-medium hover:text-primary'>
@@ -53,8 +53,11 @@ export default function Header() {
               onClick={toggleTheme}
               className='p-2 hover:bg-accent rounded-lg'
             >
-              <Moon className='h-5 w-5 dark:hidden' />
-              <Sun className='h-5 w-5 hidden dark:inline' />
+              {theme === 'light' ? (
+                <Moon className='h-5 w-5' />
+              ) : (
+                <Sun className='h-5 w-5' />
+              )}
             </button>
             <Link
               href='/cart'
@@ -68,7 +71,7 @@ export default function Header() {
               )}
             </Link>
             <Link
-              href='/profile'
+              href='/login'
               className='p-2 hover:bg-accent rounded-lg hidden md:block'
             >
               <User className='h-5 w-5' />

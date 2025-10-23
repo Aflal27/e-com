@@ -1,29 +1,92 @@
 @import 'tailwindcss';
 
 :root {
-  --background: #ffffff;
+  /* Core */
+  --background: #e4e5f1;
   --foreground: #171717;
+
+  /* Surface tokens */
+  --card: #ffffff;
+  --card-foreground: #171717;
+  --popover: #ffffff;
+  --popover-foreground: #171717;
+
+  /* Brand tokens */
+  --primary: #111827;
+  --primary-foreground: #f8fafc;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #111827;
+  --accent: #f1f5f9;
+  --accent-foreground: #111827;
+  --muted: #f1f5f9;
+  --muted-foreground: #6b7280;
+  --destructive: #ef4444;
+  --destructive-foreground: #f8fafc;
+
+  /* UI tokens */
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #111827;
 }
 
 /* Class-based dark mode support */
 html.dark {
   --background: #0a0a0a;
   --foreground: #ededed;
+
+  --card: #0a0a0a;
+  --card-foreground: #ededed;
+  --popover: #0a0a0a;
+  --popover-foreground: #ededed;
+
+  --primary: #f8fafc;
+  --primary-foreground: #111827;
+  --secondary: #1f2937;
+  --secondary-foreground: #f8fafc;
+  --accent: #1f2937;
+  --accent-foreground: #f8fafc;
+  --muted: #1f2937;
+  --muted-foreground: #9ca3af;
+  --destructive: #7f1d1d;
+  --destructive-foreground: #f8fafc;
+
+  --border: #1f2937;
+  --input: #1f2937;
+  --ring: #e5e7eb;
 }
 
 @theme inline {
+  /* Map CSS variables to Tailwind design tokens */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Note: We rely on class-based theming via `html.dark` from next-themes.
+   Avoid overriding :root with prefers-color-scheme to ensure manual
+   toggle (light/dark) always wins over OS setting. */
 
 body {
   background: var(--background);

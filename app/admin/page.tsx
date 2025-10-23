@@ -1,7 +1,14 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Upload, Trash2, Edit, LogOut, Image as ImageIcon } from 'lucide-react'
+import {
+  Upload,
+  Trash2,
+  Edit,
+  LogOut,
+  Image as ImageIcon,
+  Loader2,
+} from 'lucide-react'
 
 interface BannerDoc {
   _id: string
@@ -15,6 +22,21 @@ export default function AdminDashboard() {
   const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  // Track per-banner updating state
+  const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set())
+  // Custom delete dialog state
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  const startUpdating = (id: string) =>
+    setUpdatingIds((prev) => new Set([...prev, id]))
+  const stopUpdating = (id: string) =>
+    setUpdatingIds((prev) => {
+      const next = new Set(prev)
+      next.delete(id)
+      return next
+    })
+  const isUpdating = (id: string) => updatingIds.has(id)
   useEffect(() => {
     const init = async () => {
       try {
@@ -68,17 +90,30 @@ export default function AdminDashboard() {
     }
     reader.readAsDataURL(file)
   }
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this banner?')) return
+  // Open custom delete dialog
+  const handleDelete = (id: string) => {
+    setPendingDeleteId(id)
+  }
+
+  const closeDeleteDialog = () => {
+    if (!deleting) setPendingDeleteId(null)
+  }
+
+  const confirmDelete = async () => {
+    if (!pendingDeleteId) return
     try {
-      const res = await fetch(`/api/banners/${id}`, {
+      setDeleting(true)
+      const res = await fetch(`/api/banners/${pendingDeleteId}`, {
         method: 'DELETE',
         credentials: 'include',
       })
       if (!res.ok) throw new Error('Delete failed')
-      setBanners((prev) => prev.filter((b) => b._id !== id))
+      setBanners((prev) => prev.filter((b) => b._id !== pendingDeleteId))
+      setPendingDeleteId(null)
     } catch {
       setError('Delete failed')
+    } finally {
+      setDeleting(false)
     }
   }
   const handleUpdate = (id: string) => {
@@ -92,6 +127,7 @@ export default function AdminDashboard() {
       reader.onloadend = () => {
         ;(async () => {
           try {
+            startUpdating(id)
             const res = await fetch(`/api/banners/${id}`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
@@ -103,6 +139,8 @@ export default function AdminDashboard() {
             setBanners((prev) => prev.map((b) => (b._id === id ? updated : b)))
           } catch {
             setError('Update failed')
+          } finally {
+            stopUpdating(id)
           }
         })()
       }
@@ -176,21 +214,37 @@ export default function AdminDashboard() {
                       />
                     )}
                   </div>
-                  <div className='absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4'>
-                    <button
-                      onClick={() => handleUpdate(banner._id)}
-                      className='p-3 bg-white rounded-lg hover:bg-gray-100 transition-colors'
-                      title='Update'
-                    >
-                      <Edit className='h-5 w-5 text-gray-900' />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(banner._id)}
-                      className='p-3 bg-red-500 rounded-lg hover:bg-red-600 transition-colors'
-                      title='Delete'
-                    >
-                      <Trash2 className='h-5 w-5 text-white' />
-                    </button>
+                  <div
+                    className={
+                      'absolute inset-0 bg-black/60 transition-opacity flex items-center justify-center gap-4 ' +
+                      (isUpdating(banner._id)
+                        ? 'opacity-100'
+                        : 'opacity-0 group-hover:opacity-100')
+                    }
+                  >
+                    {isUpdating(banner._id) ? (
+                      <div className='flex items-center gap-2 text-primary-foreground'>
+                        <Loader2 className='h-5 w-5 animate-spin' />
+                        <span className='text-sm'>Updating…</span>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleUpdate(banner._id)}
+                          className='p-3 bg-card rounded-lg hover:bg-muted transition-colors'
+                          title='Update'
+                        >
+                          <Edit className='h-5 w-5 text-foreground' />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(banner._id)}
+                          className='p-3 bg-destructive rounded-lg hover:bg-destructive/90 transition-colors'
+                          title='Delete'
+                        >
+                          <Trash2 className='h-5 w-5 text-destructive-foreground' />
+                        </button>
+                      </>
+                    )}
                   </div>
                   <div className='p-4'>
                     <div className='flex items-center gap-2 text-sm text-muted-foreground'>
@@ -210,6 +264,59 @@ export default function AdminDashboard() {
           </>
         )}
       </main>
+      {/* Delete confirmation dialog */}
+      {pendingDeleteId && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center'>
+          <div
+            className='absolute inset-0 bg-black/60 backdrop-blur-sm'
+            onClick={closeDeleteDialog}
+          />
+          <div
+            className='relative w-full max-w-md mx-4 rounded-lg border bg-card shadow-xl'
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className='p-6'>
+              <h3 className='text-lg font-semibold mb-2'>Delete banner?</h3>
+              <p className='text-sm text-muted-foreground mb-4'>
+                This action cannot be undone. This will permanently delete the
+                banner.
+              </p>
+              {/* Preview */}
+              {(() => {
+                const b = banners.find((x) => x._id === pendingDeleteId)
+                if (!b) return null
+                return (
+                  <div className='mb-4 rounded overflow-hidden border'>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={b.image}
+                      alt={b.alt}
+                      className='w-full h-40 object-cover'
+                    />
+                  </div>
+                )
+              })()}
+              <div className='flex justify-end gap-2'>
+                <button
+                  onClick={closeDeleteDialog}
+                  disabled={deleting}
+                  className='px-4 py-2 rounded-md border hover:bg-muted disabled:opacity-50'
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  disabled={deleting}
+                  className='px-4 py-2 rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 inline-flex items-center gap-2'
+                >
+                  {deleting && <Loader2 className='h-4 w-4 animate-spin' />}
+                  {deleting ? 'Deleting…' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
